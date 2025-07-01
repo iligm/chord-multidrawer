@@ -2,21 +2,66 @@ import chordDictionary from './chords_ceg.js';
 
 const canvas = document.getElementById('balalaikaNeck');
 const ctx = canvas.getContext('2d');
-const stringInputs = [
-  document.getElementById('string1'),
-  document.getElementById('string2'),
-  document.getElementById('string3')
+
+const stringCount = chordDictionary.stringCount || 3;
+const notesList = [
+  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
 ];
-const noteSelects = [
-  document.getElementById('note1'),
-  document.getElementById('note2'),
-  document.getElementById('note3')
-];
-const checkInputs = [
-  document.getElementById('check1'),
-  document.getElementById('check2'),
-  document.getElementById('check3')
-];
+
+// Генерируем элементы управления для струн
+const stringsContainer = document.getElementById('stringsContainer');
+stringsContainer.innerHTML = '';
+for (let i = 1; i <= stringCount; i++) {
+  const div = document.createElement('div');
+  div.className = 'flex items-center space-x-2';
+
+  // Селектор нот
+  const select = document.createElement('select');
+  select.id = `note${i}`;
+  select.className = 'p-2 border rounded';
+  notesList.forEach(note => {
+    const option = document.createElement('option');
+    option.value = note;
+    option.textContent = note;
+    // По умолчанию выбираем из tuning, если есть
+    if (chordDictionary.tuning && chordDictionary.tuning[i-1] === note) option.selected = true;
+    div.appendChild(option);
+    select.appendChild(option);
+  });
+
+  // Ввод лада
+  const input = document.createElement('input');
+  input.id = `string${i}`;
+  input.type = 'number';
+  input.min = '0';
+  input.max = '26';
+  input.value = '0';
+  input.className = 'w-16 p-2 border rounded text-center';
+  input.placeholder = 'Лад';
+
+  // Чекбокс
+  const check = document.createElement('input');
+  check.id = `check${i}`;
+  check.type = 'checkbox';
+  check.className = 'h-5 w-5';
+  check.checked = true;
+
+  div.appendChild(select);
+  div.appendChild(input);
+  div.appendChild(check);
+  stringsContainer.appendChild(div);
+}
+
+// После генерации элементов собираем массивы
+const stringInputs = [];
+const noteSelects = [];
+const checkInputs = [];
+for (let i = 1; i <= stringCount; i++) {
+  stringInputs.push(document.getElementById(`string${i}`));
+  noteSelects.push(document.getElementById(`note${i}`));
+  checkInputs.push(document.getElementById(`check${i}`));
+}
+
 const chordSelect = document.getElementById('chordSelect');
 const tabSetSelect = document.getElementById('tabSetSelect');
 
@@ -30,19 +75,18 @@ Object.keys(chordDictionary.chords).forEach(chord => {
 
 function drawChord(tuning, tabs, checks) {
   // Переворачиваем порядок табов и чеков:
-  // G–E–C (снизу вверх) → C–E–G (сверху вниз)
   const reversedTabs   = [...tabs].reverse();
   const reversedChecks = [...checks].reverse();
 
   // 1) Обновляем ноты строя (не меняем порядок линий)
   noteSelects.forEach((select, i) => {
-    select.value = tuning[i];
+    if (tuning[i]) select.value = tuning[i];
   });
 
   // 2) Обновляем поля ввода и чекбоксы по перевёрнутым массивам
   stringInputs.forEach((input, i) => {
-    input.value = reversedTabs[i];
-    checkInputs[i].checked = reversedChecks[i];
+    input.value = reversedTabs[i] !== undefined ? reversedTabs[i] : 0;
+    checkInputs[i].checked = reversedChecks[i] !== undefined ? reversedChecks[i] : true;
   });
 
   // 3) Очищаем канвас
@@ -62,7 +106,7 @@ function drawChord(tuning, tabs, checks) {
   const stringSpacing = 40;
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < stringCount; i++) {
     ctx.beginPath();
     ctx.moveTo(80, 30 + i * stringSpacing);
     ctx.lineTo(canvas.width - 50, 30 + i * stringSpacing);
@@ -76,7 +120,7 @@ function drawChord(tuning, tabs, checks) {
     const fretNumber = minFret + i - 1;
     ctx.beginPath();
     ctx.moveTo(80 + i * fretSpacing, 30);
-    ctx.lineTo(80 + i * fretSpacing, 30 + 2 * stringSpacing);
+    ctx.lineTo(80 + i * fretSpacing, 30 + (stringCount - 1) * stringSpacing);
     ctx.stroke();
     ctx.font = '12px Arial';
     ctx.fillText(fretNumber, 80 + i * fretSpacing - 5, 20);
@@ -135,7 +179,7 @@ tabSetSelect.addEventListener('change', () => {
   }
 });
 
-// Обновление при вводе лада вручную
+// Удаляем старые обработчики и навешиваем новые
 stringInputs.forEach(input => {
   input.addEventListener('input', () => {
     chordSelect.value = '';
@@ -149,7 +193,6 @@ stringInputs.forEach(input => {
   });
 });
 
-// Обновление при смене ноты строя
 noteSelects.forEach(select => {
   select.addEventListener('change', () => {
     chordSelect.value = '';
@@ -163,7 +206,6 @@ noteSelects.forEach(select => {
   });
 });
 
-// Обновление при клике по чекбоксу
 checkInputs.forEach(check => {
   check.addEventListener('change', () => {
     chordSelect.value = '';

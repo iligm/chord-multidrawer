@@ -1,4 +1,5 @@
 export default {
+  stringCount: 3,
   tuning: ["C", "E", "G"],
   chords: {
     "C": [
