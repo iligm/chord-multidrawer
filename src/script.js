@@ -151,11 +151,123 @@ function drawChord(tuning, tabs, checks) {
   });
 }
 
+function drawChordOnCanvas(ctx, canvas, tuning, tabs, checks) {
+  const stringCount = tuning.length;
+  const reversedTabs   = [...tabs].reverse();
+  const reversedChecks = [...checks].reverse();
+  let frets = reversedTabs
+    .map((f, i) => reversedChecks[i] ? f : -1)
+    .filter(f => f > 0);
+  let minFret = frets.length ? Math.min(...frets) : 1;
+  let maxFret = frets.length ? Math.max(...frets) : 5;
+  minFret = Math.max(1, minFret - 1);
+  maxFret = Math.min(26, maxFret + 1);
+  let fretCount = Math.max(5, maxFret - minFret + 1);
+  const stringSpacing = (canvas.height - 60) / (stringCount - 1);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < stringCount; i++) {
+    ctx.beginPath();
+    ctx.moveTo(40, 30 + i * stringSpacing);
+    ctx.lineTo(canvas.width - 30, 30 + i * stringSpacing);
+    ctx.stroke();
+  }
+  const fretSpacing = (canvas.width - 70) / (fretCount - 1);
+  ctx.lineWidth = 1;
+  for (let i = 0; i < fretCount; i++) {
+    const fretNumber = minFret + i - 1;
+    ctx.beginPath();
+    ctx.moveTo(40 + i * fretSpacing, 30);
+    ctx.lineTo(40 + i * fretSpacing, 30 + (stringCount - 1) * stringSpacing);
+    ctx.stroke();
+    ctx.font = '12px Arial';
+    ctx.fillText(fretNumber, 40 + i * fretSpacing - 5, 20);
+  }
+  ctx.font = '16px Arial';
+  ctx.fillStyle = '#000';
+  tuning.forEach((note, i) => {
+    ctx.fillText(note, 10, 35 + i * stringSpacing);
+  });
+  ctx.fillStyle = '#000';
+  reversedTabs.forEach((fret, i) => {
+    const isOn = reversedChecks[i];
+    ctx.fillText(isOn ? fret : 'X', canvas.width - 20, 35 + i * stringSpacing);
+    if (isOn && fret >= minFret && fret <= maxFret) {
+      const x = 40 + (fret - minFret + 0.5) * fretSpacing;
+      const y = 30 + i * stringSpacing;
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+function createChordWindow({
+  title = '',
+  tuning, tabs, checks,
+  x = 100, y = 100, width = 400, height = 150
+}) {
+  const chordWindows = document.getElementById('chordWindows');
+  const win = document.createElement('div');
+  win.className = 'chord-window';
+  win.style.left = x + 'px';
+  win.style.top = y + 'px';
+  win.style.width = width + 'px';
+  win.style.height = height + 'px';
+
+  // Заголовок и крестик
+  const header = document.createElement('div');
+  header.className = 'chord-header';
+  const titleDiv = document.createElement('div');
+  titleDiv.className = 'chord-title';
+  titleDiv.textContent = title;
+  header.appendChild(titleDiv);
+  win.appendChild(header);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'close-btn';
+  closeBtn.innerHTML = '&times;';
+  closeBtn.onclick = () => win.remove();
+  win.appendChild(closeBtn);
+
+  // Канвас
+  const chordCanvas = document.createElement('canvas');
+  chordCanvas.width = width - 40;
+  chordCanvas.height = height - 60;
+  chordCanvas.className = 'chord-canvas';
+  win.appendChild(chordCanvas);
+
+  chordWindows.appendChild(win);
+
+  // Рисуем аккорд
+  const ctx = chordCanvas.getContext('2d');
+  drawChordOnCanvas(ctx, chordCanvas, tuning, tabs, checks);
+
+  // Drag'n'drop
+  let offsetX, offsetY, isDragging = false;
+  header.onmousedown = function(e) {
+    isDragging = true;
+    offsetX = e.clientX - win.offsetLeft;
+    offsetY = e.clientY - win.offsetTop;
+    document.body.style.userSelect = 'none';
+  };
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    win.style.left = (e.clientX - offsetX) + 'px';
+    win.style.top = (e.clientY - offsetY) + 'px';
+  });
+  document.addEventListener('mouseup', function() {
+    isDragging = false;
+    document.body.style.userSelect = '';
+  });
+}
+
+// При выборе аккорда или таба создаём новое окно
 chordSelect.addEventListener('change', () => {
   const chord = chordSelect.value;
   tabSetSelect.innerHTML = '<option value="">Выберите набор</option>';
   tabSetSelect.disabled = !chord;
-
   if (chord) {
     chordDictionary.chords[chord].forEach((tabs, idx) => {
       const option = document.createElement('option');
@@ -163,9 +275,18 @@ chordSelect.addEventListener('change', () => {
       option.textContent = `Набор ${idx + 1} (${tabs.join(', ')})`;
       tabSetSelect.appendChild(option);
     });
+    // Окно с пустым аккордом
+    createChordWindow({
+      title: chord,
+      tuning: chordDictionary.tuning,
+      tabs: [0,0,0].slice(0, stringCount),
+      checks: Array(stringCount).fill(true),
+      x: 100 + Math.random()*100,
+      y: 100 + Math.random()*100,
+      width: 400,
+      height: 180
+    });
   }
-
-  // Сброс отображения на пустой
   drawChord(chordDictionary.tuning, [0, 0, 0], [true, true, true]);
 });
 
@@ -175,6 +296,16 @@ tabSetSelect.addEventListener('change', () => {
   if (chord && tabIndex !== '') {
     const tabs   = chordDictionary.chords[chord][tabIndex];
     const checks = tabs.map(f => f >= 0);
+    createChordWindow({
+      title: `${chord} (${tabs.join(', ')})`,
+      tuning: chordDictionary.tuning,
+      tabs: tabs.slice(0, stringCount),
+      checks: checks.slice(0, stringCount),
+      x: 120 + Math.random()*120,
+      y: 120 + Math.random()*120,
+      width: 400,
+      height: 180
+    });
     drawChord(chordDictionary.tuning, tabs, checks);
   }
 });

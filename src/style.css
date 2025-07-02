@@ -127,3 +127,56 @@ canvas {
     max-width: 100%;
   }
 }
+
+.chord-window {
+  position: absolute;
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.18), 0 1.5px 4px 0 rgba(0,0,0,0.08);
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+  min-width: 320px;
+  min-height: 180px;
+  z-index: 1000;
+  user-select: none;
+  transition: box-shadow 0.2s;
+}
+.chord-window .close-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #888;
+  cursor: pointer;
+  z-index: 1010;
+  transition: color 0.2s;
+}
+.chord-window .close-btn:hover {
+  color: #e11d48;
+}
+.chord-window .chord-canvas {
+  display: block;
+  margin: 0 auto;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+}
+.chord-window .chord-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+.chord-window .chord-header {
+  cursor: move;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
