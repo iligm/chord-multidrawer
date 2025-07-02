@@ -1,5 +1,7 @@
 import chordDictionary from './chords_ceg.js';
 
+const SHOW_EMPTY_CHORD_ON_CHORD_SELECT = 0;
+
 const canvas = document.getElementById('balalaikaNeck');
 const ctx = canvas.getContext('2d');
 
@@ -275,17 +277,18 @@ chordSelect.addEventListener('change', () => {
       option.textContent = `Набор ${idx + 1} (${tabs.join(', ')})`;
       tabSetSelect.appendChild(option);
     });
-    // Окно с пустым аккордом
-    createChordWindow({
-      title: chord,
-      tuning: chordDictionary.tuning,
-      tabs: [0,0,0].slice(0, stringCount),
-      checks: Array(stringCount).fill(true),
-      x: 100 + Math.random()*100,
-      y: 100 + Math.random()*100,
-      width: 400,
-      height: 180
-    });
+    if (SHOW_EMPTY_CHORD_ON_CHORD_SELECT) {
+      createChordWindow({
+        title: chord,
+        tuning: chordDictionary.tuning,
+        tabs: [0,0,0].slice(0, stringCount),
+        checks: Array(stringCount).fill(true),
+        x: 100 + Math.random()*100,
+        y: 100 + Math.random()*100,
+        width: 400,
+        height: 180
+      });
+    }
   }
   drawChord(chordDictionary.tuning, [0, 0, 0], [true, true, true]);
 });
