@@ -1,6 +1,7 @@
 import chordDictionary from './chords_ceg.js';
 
 const SHOW_EMPTY_CHORD_ON_CHORD_SELECT = 0;
+const REVERSE_NOTES_ORDER = 1;
 
 const canvas = document.getElementById('balalaikaNeck');
 const ctx = canvas.getContext('2d');
@@ -354,4 +355,8 @@ checkInputs.forEach(check => {
 });
 
 // Первоначальная отрисовка
-drawChord(chordDictionary.tuning, [0, 0, 0], [true, true, true]);
+if (REVERSE_NOTES_ORDER) {
+  drawChord(chordDictionary.tuning.reverse(), [0, 0, 0], [true, true, true]);
+} else {
+  drawChord(chordDictionary.tuning, [0, 0, 0], [true, true, true]);
+}
